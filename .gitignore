@@ -1,0 +1,10 @@
+.DS_Store
+*.aux
+*.lof
+*.log
+*.lot
+*.out
+*.toc
+*.pdf
+.vscode/
+build/
