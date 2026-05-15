@@ -1,22 +1,91 @@
 \section{Protocolo E91}
-
+ 
 \subsection{Contexto y propósito}
-
+El protocolo E91 fue propuesto por \cite{ekert1991} y representa un cambio conceptual fundamental respecto a BB84 y B92. Mientras que los protocolos de preparación y medida basan su seguridad en la indistinguibilidad de estados cuánticos, E91 fundamenta la distribución de claves en el entrelazamiento cuántico y en la violación de las desigualdades de Bell \citep{ekert1991,gisin2002}. Esta distinción no es solo formal: en E91 la seguridad puede verificarse directamente a partir de correlaciones estadísticas medibles, sin necesidad de confiar en que la fuente de estados sea honesta, lo que lo conecta con el paradigma de la criptografía independiente del dispositivo \citep{scarani2009,acin2007}.
+ 
+En E91, una fuente genera pares de cúbits entrelazados en el estado singlete de Bell y distribuye un cúbit de cada par a Alicia y otro a Bob. Si ningún adversario ha perturbado el estado, las mediciones de ambos sobre sus respectivos cúbits exhibirán correlaciones que violan la desigualdad CHSH, lo que certifica la presencia de entrelazamiento genuino y la ausencia de información filtrada a un espía \citep{ekert1991,clauser1969}.
+ 
 \subsection{Funcionamiento del protocolo}
-
-
+La fuente genera repetidamente el estado singlete $|\Psi^-\rangle = \frac{1}{\sqrt{2}}(|01\rangle - |10\rangle)$ y distribuye el primer cúbit a Alicia y el segundo a Bob \citep{ekert1991}. Alicia escoge aleatoriamente su dirección de medida entre tres ángulos; en la descripción original son $0$, $\pi/4$ y $\pi/2$ radianes. Bob escoge la suya entre otros tres ángulos: $\pi/4$, $\pi/2$ y $3\pi/4$ radianes \citep{ekert1991,gisin2002}.
+ 
+Tras medir muchos pares, Alicia y Bob anuncian por el canal clásico autenticado los ángulos empleados en cada ronda, pero nunca los resultados obtenidos. Las rondas se dividen en dos grupos. En las rondas donde ambos eligieron bases coincidentes (los ángulos compartidos $\pi/4$ y $\pi/2$), los resultados están perfectamente anticorrelacionados para el estado singlete y se usan para formar la clave bruta. En las rondas con bases distintas, los resultados se emplean para estimar los coeficientes de la desigualdad CHSH \citep{ekert1991,clauser1969,scarani2009}.
+ 
+\begin{figure}[h]
+    \centering
+    \begin{tikzpicture}[
+        node distance=0.9cm and 1.2cm,
+        paso/.style={draw, rounded corners, align=center, minimum width=3.4cm, minimum height=0.8cm},
+        canal/.style={draw, rounded corners, align=center, minimum width=2.8cm, minimum height=0.8cm, fill=gray!10},
+        flecha/.style={-{Latex[length=2mm]}, thick}
+    ]
+        \node[canal] (src) {Fuente\\par entrelazado $|\Psi^-\rangle$};
+        \node[paso, left=1.4cm of src] (a1) {Alicia\\elige ángulo\\y mide};
+        \node[paso, right=1.4cm of src] (b1) {Bob\\elige ángulo\\y mide};
+ 
+        \node[canal, below=of src] (c) {canal clásico\\autenticado};
+        \node[paso, left=1.4cm of c] (a2) {Alicia anuncia\\ángulos usados};
+        \node[paso, right=1.4cm of c] (b2) {Bob anuncia\\ángulos usados};
+ 
+        \node[paso, below=1.2cm of c, xshift=-2.2cm] (sift) {Rondas coincidentes:\\clave bruta};
+        \node[paso, below=1.2cm of c, xshift=+2.2cm] (bell) {Rondas distintas:\\test CHSH};
+ 
+        \node[paso, below=1.2cm of sift, xshift=+2.2cm] (post) {Reconciliación y\\amplificación de privacidad};
+        \node[paso, below=of post, fill=gray!10] (key) {Clave final\\compartida};
+ 
+        \draw[flecha] (src) -- (a1);
+        \draw[flecha] (src) -- (b1);
+        \draw[flecha] (a1) -- (a2);
+        \draw[flecha] (b1) -- (b2);
+        \draw[flecha] (a2) -- (c);
+        \draw[flecha] (b2) -- (c);
+        \draw[flecha] (c) -- (sift);
+        \draw[flecha] (c) -- (bell);
+        \draw[flecha] (sift) -- (post);
+        \draw[flecha] (bell) -- (post);
+        \draw[flecha] (post) -- (key);
+    \end{tikzpicture}
+    \caption[Esquema operativo de E91]{Diagrama de flujo simplificado del protocolo E91. Fuente: elaboración propia.}
+    \label{fig:e91_flujo}
+\end{figure}
+ 
+La Figura~\ref{fig:e91_flujo} resume la estructura del protocolo. Si Eva ha interceptado o manipulado los cúbits, el entrelazamiento original se habrá degradado y las correlaciones medidas en las rondas de test no alcanzarán el valor esperado por la mecánica cuántica. En ese caso, la desigualdad CHSH deja de violarse, y Alicia y Bob detectan la anomalía estadística y abortan el protocolo \citep{ekert1991,scarani2009}. Si la violación se confirma, continúan con la clave bruta, aplican corrección de errores y amplificación de privacidad \citep{gisin2002}.
+ 
 \subsection{Ventajas principales}
 \begin{itemize}
-    \item a
-    \item b
-    \item c
+    \item La seguridad se certifica a través de un test físico observable, la violación de la desigualdad CHSH, lo que elimina la necesidad de asumir que la fuente de estados es honesta o que los dispositivos se comportan como se anuncia \citep{ekert1991,acin2007}.
+    \item La fuente de pares entrelazados puede encontrarse en un nodo intermedio no confiable, ya que cualquier manipulación por parte de ese nodo se reflejaría en las estadísticas de Bell \citep{gisin2002,scarani2009}.
+    \item E91 constituye el precedente conceptual directo de los protocolos independientes del dispositivo, que representan el estándar más alto de seguridad demostrable en QKD \citep{acin2007}.
+    \item Admite implementaciones con fotones entrelazados en polarización, tiempo o grado de libertad orbital, lo que ofrece flexibilidad en la elección de la plataforma física \citep{gisin2002}.
 \end{itemize}
-
+ 
 \subsection{Limitaciones y riesgos}
 \begin{itemize}
-    \item a
-    \item b
-    \item c
+    \item La generación y distribución eficiente de pares entrelazados es tecnológicamente más exigente que la simple preparación de estados de un fotón, lo que eleva el coste y la complejidad de la implementación experimental \citep{gisin2002}.
+    \item La tasa de generación de clave es menor que en BB84, ya que solo las rondas con bases coincidentes contribuyen a la clave bruta y las rondas de test consumen una fracción adicional de los pares generados \citep{scarani2009}.
+    \item Las pérdidas del canal afectan a los dos brazos de distribución de forma independiente, lo que puede reducir severamente la tasa de detecciones en coincidencia, especialmente a larga distancia \citep{gisin2002}.
+    \item El test CHSH requiere acumular suficientes rondas para que la estimación estadística sea significativa; en presencia de ruido elevado o baja eficiencia de detección, puede ser difícil obtener una violación estadísticamente concluyente \citep{ekert1991,scarani2009}.
 \end{itemize}
-
+ 
 \subsection{Ejemplo práctico}
+Se supone que Alicia y Bob desean establecer una clave usando una fuente de pares entrelazados situada en un nodo intermedio. Para ilustrar el procedimiento, se considera un caso reducido de seis rondas. En cada ronda la fuente emite un par en el estado $|\Psi^-\rangle$, Alicia elige uno de sus tres ángulos de medida y Bob elige uno de los suyos, de forma independiente y aleatoria. Los conjuntos de ángulos posibles son $\{0, \pi/4, \pi/2\}$ para Alicia y $\{\pi/4, \pi/2, 3\pi/4\}$ para Bob; los ángulos compartidos son $\pi/4$ y $\pi/2$.
+ 
+\begin{table}[h]
+    \centering
+    \small
+    \begin{tabular}{c c c c c}
+        \hline\hline
+        Ronda & Ángulo de Alicia & Ángulo de Bob & ¿Bases coinciden? & Uso de la ronda \\
+        \hline
+        1 & $0$       & $\pi/4$   & No  & Test CHSH \\
+        2 & $\pi/4$   & $\pi/4$   & Sí  & Clave bruta \\
+        3 & $\pi/2$   & $3\pi/4$  & No  & Test CHSH \\
+        4 & $\pi/2$   & $\pi/2$   & Sí  & Clave bruta \\
+        5 & $0$       & $3\pi/4$  & No  & Test CHSH \\
+        6 & $\pi/4$   & $\pi/2$   & No  & Test CHSH \\
+        \hline
+    \end{tabular}
+    \caption[Ejemplo de cribado en E91]{Ejemplo simplificado de clasificación de rondas en E91. Fuente: elaboración propia.}
+    \label{tab:e91_ejemplo}
+\end{table}
+ 
+En el caso de la Tabla~\ref{tab:e91_ejemplo}, solo las rondas 2 y 4 tienen bases coincidentes y pasan a formar parte de la clave bruta. Para el estado singlete, si Alicia obtuvo el bit 0 en la ronda 2, Bob habrá obtenido el bit 1, y viceversa; uno de los dos puede invertir su bit para que ambos compartan la misma cadena. Las rondas 1, 3, 5 y 6, con bases distintas, se usan para calcular el parámetro $S$ de la desigualdad CHSH. En presencia de entrelazamiento puro, el valor esperado es $S = 2\sqrt{2} \approx 2{,}83$, que viola el límite clásico $S \leq 2$ \citep{clauser1969}. Si las rondas de test arrojan un valor de $S$ compatible con el límite clásico, Alicia y Bob concluyen que el estado ha sido perturbado y abortan el protocolo. Este ejemplo reducido tiene únicamente como propósito ilustrar la lógica de distribución de pares, clasificación de rondas y verificación de seguridad mediante el test de Bell que caracteriza al protocolo E91.
