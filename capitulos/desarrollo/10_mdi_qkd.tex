@@ -1,22 +1,86 @@
-\section{MDI-QKD}
-
+\section{Protocolo MDI-QKD}
+ 
 \subsection{Contexto y propósito}
-
+El protocolo de distribución de clave cuántica independiente del detector (MDI-QKD, del inglés \emph{Measurement-Device-Independent Quantum Key Distribution}) fue propuesto por \cite{lo2012} como solución directa a una clase de ataques que habían comprometido implementaciones reales de QKD. Los protocolos anteriores, como BB84 o B92, asumen que los detectores de fotones se comportan exactamente según el modelo teórico. En la práctica, sin embargo, los detectores presentan imperfecciones explotables: los ataques de cegado del detector, demostrados experimentalmente por \cite{lydersen2010}, permiten a un adversario controlar las mediciones de Bob sin introducir errores estadísticos detectables, rompiendo la seguridad práctica de esos sistemas.
+ 
+MDI-QKD elimina completamente esta vulnerabilidad al trasladar la medición a un nodo intermedio no confiable, denominado Charlie \citep{lo2012,braunstein2012}. Alicia y Bob preparan y envían estados cuánticos, pero ninguno de los dos realiza mediciones sobre los fotones del otro. Charlie, que puede ser un adversario o un equipo defectuoso, realiza una medición de Bell y anuncia el resultado. La clave se deduce a partir de ese anuncio sin que la seguridad dependa de la honestidad ni de la calibración de Charlie \citep{lo2012,curty2014}.
+ 
 \subsection{Funcionamiento del protocolo}
-
-
+En cada ronda, Alicia y Bob preparan de forma independiente un cúbit cada uno, eligiendo al azar un bit y una base de codificación, igual que en BB84 \citep{lo2012,gisin2002}. Ambos envían sus cúbits a Charlie a través de sus respectivos canales cuánticos. Charlie realiza una medición de Bell conjunta sobre los dos fotones recibidos e intenta proyectarlos sobre uno de los cuatro estados de Bell. Anuncia públicamente cuál de los cuatro resultados ha obtenido, o si la medición ha fallado \citep{lo2012,braunstein2012}.
+ 
+Alicia y Bob usan el canal clásico autenticado para comparar las bases empleadas en cada ronda. Las rondas en las que ambos usaron bases distintas se descartan. En las rondas con bases coincidentes, el resultado anunciado por Charlie permite a Bob deducir, a partir de su propio bit y del anuncio, cuál fue el bit de Alicia, salvo posiblemente una inversión de bit predecible \citep{lo2012,curty2014}. La clave bruta resultante se somete a estimación de error, reconciliación de información y amplificación de privacidad de la misma forma que en BB84 \citep{lo2012,scarani2009}.
+ 
+\begin{figure}[h]
+    \centering
+    \begin{tikzpicture}[
+        node distance=0.9cm and 1.2cm,
+        paso/.style={draw, rounded corners, align=center, minimum width=3.2cm, minimum height=0.8cm},
+        charlie/.style={draw, rounded corners, align=center, minimum width=3.2cm, minimum height=0.8cm, fill=gray!20},
+        canal/.style={draw, rounded corners, align=center, minimum width=2.6cm, minimum height=0.8cm, fill=gray!10},
+        flecha/.style={-{Latex[length=2mm]}, thick}
+    ]
+        \node[paso] (a1) {Alicia\\elige bit y base\\prepara cúbit};
+        \node[charlie, right=1.3cm of a1] (ch) {Charlie\\(no confiable)\\medición de Bell};
+        \node[paso, right=1.3cm of ch] (b1) {Bob\\elige bit y base\\prepara cúbit};
+ 
+        \node[canal, below=of ch] (anuncio) {Charlie anuncia\\resultado de Bell};
+ 
+        \node[paso, below=of anuncio] (sift) {Alicia y Bob\\comparan bases\\(canal clásico)};
+ 
+        \node[paso, below=of sift] (post) {Estimación de error,\\reconciliación y\\amplificación de privacidad};
+        \node[paso, below=of post, fill=gray!10] (key) {Clave final\\compartida};
+ 
+        \draw[flecha] (a1) -- (ch) node[midway, above, font=\small] {cúbit};
+        \draw[flecha] (b1) -- (ch) node[midway, above, font=\small] {cúbit};
+        \draw[flecha] (ch) -- (anuncio);
+        \draw[flecha] (anuncio) -- (sift);
+        \draw[flecha] (sift) -- (post);
+        \draw[flecha] (post) -- (key);
+    \end{tikzpicture}
+    \caption[Esquema operativo de MDI-QKD]{Diagrama de flujo simplificado del protocolo MDI-QKD. Fuente: elaboración propia.}
+    \label{fig:mdiqkd_flujo}
+\end{figure}
+ 
+La Figura~\ref{fig:mdiqkd_flujo} ilustra la arquitectura del protocolo. La propiedad central es que Charlie no tiene acceso a los bits individuales de Alicia ni de Bob: su anuncio solo revela una relación entre los dos cúbits, que Alicia y Bob pueden explotar para correlacionar sus claves brutas sin exponer sus valores individuales \citep{lo2012,braunstein2012}. Si Charlie intenta manipular la medición, o si un adversario controla completamente los detectores de Charlie, el efecto se manifiesta como un aumento en la tasa de error observable en las rondas de test, que Alicia y Bob detectan antes de aceptar la clave \citep{lo2012,curty2014}.
+ 
 \subsection{Ventajas principales}
 \begin{itemize}
-    \item a
-    \item b
-    \item c
+    \item Elimina por completo la necesidad de confiar en los detectores: toda vulnerabilidad asociada al lado de medición, incluidos los ataques de cegado del detector, queda excluida del modelo de amenaza \citep{lo2012,lydersen2010}.
+    \item El nodo de medición de Charlie puede ser operado por un tercero no confiable o incluso por un adversario, lo que permite arquitecturas de red donde los nodos intermedios no necesitan ser seguros \citep{lo2012,braunstein2012}.
+    \item Es compatible con fuentes láser atenuadas y la técnica de estados señuelo, lo que permite implementaciones prácticas sin necesidad de fuentes de un único fotón \citep{lo2012,curty2014}.
+    \item Proporciona una base para redes QKD estrella, donde múltiples usuarios comparten un nodo central de medición sin que ese nodo tenga acceso a ninguna clave \citep{curty2014}.
 \end{itemize}
-
+ 
 \subsection{Limitaciones y riesgos}
 \begin{itemize}
-    \item a
-    \item b
-    \item c
+    \item La tasa de generación de clave es significativamente menor que en BB84, principalmente porque la probabilidad de que Charlie obtenga una detección en coincidencia disminuye con las pérdidas de los dos canales simultáneamente, lo que penaliza especialmente las distancias largas \citep{lo2012,curty2014}.
+    \item La implementación experimental requiere que los fotones emitidos por Alicia y Bob sean indistinguibles en todos sus grados de libertad en el momento de llegar a Charlie, lo que impone requisitos estrictos de sincronización y control espectral \citep{lo2012,gisin2002}.
+    \item Aunque MDI-QKD elimina los ataques al lado del detector, no cubre vulnerabilidades del lado de la preparación, como las imperfecciones en la modulación de estados o los ataques de canal lateral sobre las fuentes de Alicia y Bob \citep{scarani2009,curty2014}.
+    \item La necesidad de sincronización precisa entre las dos fuentes y el nodo de Charlie añade complejidad operativa y puede reducir la estabilidad del sistema en entornos de despliegue real \citep{lo2012}.
 \end{itemize}
-
+ 
 \subsection{Ejemplo práctico}
+Se supone que Alicia y Bob desean establecer una clave utilizando como nodo de medición un equipo de Charlie cuya fiabilidad no puede garantizarse. Para ilustrar el procedimiento, se considera un caso reducido de seis rondas. En cada ronda, Alicia y Bob preparan independientemente un cúbit usando la misma lógica de elección de bit y base que en BB84, y los envían simultáneamente a Charlie. Charlie realiza la medición de Bell e informa del resultado.
+ 
+\begin{table}[h]
+    \centering
+    \small
+    \begin{tabular}{c c c c c c}
+        \hline\hline
+        Ronda & Base de Alicia & Base de Bob & Resultado de Charlie & ¿Bases coinciden? & ¿Se conserva? \\
+        \hline
+        1 & Rectilínea & Rectilínea & $|\Phi^+\rangle$ & Sí  & Sí \\
+        2 & Diagonal   & Rectilínea & $|\Psi^-\rangle$ & No  & No \\
+        3 & Rectilínea & Rectilínea & Fallo            & Sí  & No \\
+        4 & Diagonal   & Diagonal   & $|\Phi^-\rangle$ & Sí  & Sí \\
+        5 & Rectilínea & Diagonal   & $|\Psi^+\rangle$ & No  & No \\
+        6 & Diagonal   & Diagonal   & $|\Phi^+\rangle$ & Sí  & Sí \\
+        \hline
+    \end{tabular}
+    \caption[Ejemplo de cribado en MDI-QKD]{Ejemplo simplificado de cribado en MDI-QKD. Fuente: elaboración propia.}
+    \label{tab:mdiqkd_ejemplo}
+\end{table}
+ 
+En el caso de la Tabla~\ref{tab:mdiqkd_ejemplo}, se conservan las rondas 1, 4 y 6, que son aquellas en las que Alicia y Bob usaron la misma base y Charlie obtuvo una detección en coincidencia. La ronda 3 se descarta a pesar de que las bases coinciden, porque Charlie no logró una detección válida. A partir del resultado de Bell anunciado por Charlie en cada ronda conservada, Bob puede aplicar o no una corrección de bit sobre su valor para sincronizar su clave bruta con la de Alicia, según la correspondencia definida por el protocolo.
+ 
+Para verificar la seguridad, Alicia y Bob revelan públicamente los valores de una muestra de las rondas conservadas y calculan la tasa de error. Si Charlie hubiese manipulado las mediciones, los estados reenviados o los anuncios, la tasa de error observada en la muestra sería anormalmente alta, lo que conduciría a abortar el protocolo. En una implementación real se usarían miles de rondas y la técnica de estados señuelo para estimar con precisión los parámetros del canal. Este ejemplo reducido tiene únicamente como propósito ilustrar la lógica de preparación simultánea, medición de Bell delegada en un nodo no confiable y cribado por coincidencia de bases que caracteriza al protocolo MDI-QKD.
