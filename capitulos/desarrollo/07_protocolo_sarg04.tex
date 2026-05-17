@@ -1,22 +1,100 @@
 \section{Protocolo SARG04}
 
 \subsection{Contexto y propósito}
+Uno de las potenciales limitaciones del protocolo BB84 está relacionado con fuentes láser atenuadas y la posibilidad de ataques no reconocibles. El protocolo SAGR04  propuesto por \cite{sgar04}, que mantiene el mismo formato de nombres de protocolos (Scarani, Acín, Ribordy, Gisin, 2004) fue diseñado para reforzar esta vulnerabilidad del protocolo BB84, especialmente para el ataque conocido como PNS (photon-number-splittting), cuando se usan pulsos coherentes atenuados en lugar de un solo fotón.
+\newline
+
+El ataque PNS aprovecha que las fuentes de pulsos coherentes  usadas en QKD, pueden emitir ocasionalmente más de un fotón por pulso. Un atacante, Eva,  puede separar y retener uno o más fotones de esos pulsos múltiples sin introducir errores detectables en la señal enviada a Bob, y medirlos más tarde para obtener información sobre la clave secreta, lo que compromete la seguridad de protocolos como BB84.Es decir, Eva puede, aprovechando las perdidas del canal, ejecutar y modificar cierto número de fotones hasta el umbral de la estadística de número de fotones que observa Bob no sea distinguible de una fuente aleatoria con ciertas perdidas.  \cite{lutkenhaus2002} muestran que, en presencia de pérdidas altas, el PNS puede ser la estrategia dominante frente a otros ataques y reducen severamente la tasa segura si no se corrige el problema mediante técnicas como ''states decoy'' \citep{hwang2003} o protocolos alternativos como SGAR04.
 
 \subsection{Funcionamiento del protocolo}
 
+El protocolo SARG04  conserva la misma preparación física de los cuatro estados no ortogonales que BB84, pero modifica el anuncio clásico posterior para codificar la información mediante pares de estados en lugar de anunciar la base empleada.
+\newline
+
+Alicia envía pulsos en uno de los cuatro estados $\{|0\rangle,|1\rangle,|+\rangle,|-\rangle\}$ elegidos al azar y Bob mide en una de las dos bases (polarización rectilínea o diagonal) como en BB84. La diferencia clave de SARG04 es que, tras la transmisión, Alicia no anuncia la base sino un par de estados que contiene el estado realmente enviado, por ejemplo $(|0\rangle,|+\rangle)$. Dado ese par, el resultado de Bob puede ser «concluyente» (su medida es incompatible con exactamente uno de los dos estados del par) o «no concluyente» (su resultado es compatible con ambos), de modo que solo las posiciones concluyentes se conservan para la clave. Esta regla reduce la proporción de bits retenidos respecto a BB84 pero cambia la estadística disponible para un atacante: Eva, incluso si retiene un fotón de un pulso multifotón (ataque PNS), no puede saber a priori qué par anunciará Alicia y, por tanto, no siempre podrá convertir su fotón retenido en información útil sin riesgo de introducir discrepancias detectables en la fracción concluyente de eventos. En otras palabras, el anuncio de pares limita la cantidad de información que Eva puede obtener de un fotón retenido porque la probabilidad de que ese fotón sea tratado por Bob como concluyente depende del par anunciado y de la base de medida de Bob, y Eva no controla ni conoce esos anuncios al interceptar el pulso. Por eso SARG04 mejora la resistencia práctica frente al PNS en escenarios con fuentes láser atenuadas: compensa la ventaja estadística de Eva restringiendo las rondas útiles para Eva, a costa de una menor eficiencia de cribado.
+\newline
+
+
+En la práctica, SARG04 puede generar clave secreta a partir de pulsos de dos fotones en condiciones donde BB84 no lo haría, aunque con las contramedidas modernas (p. ej. decoy states) BB84 con estados decoy suele alcanzar tasas y distancias seguras superiores; por tanto, la ventaja de SARG04 es especialmente relevante en implementaciones sin decoy o con alta pérdida 
+\newline
+
+
+\begin{figure}[h]
+    \centering
+    \begin{tikzpicture}[
+        node distance=0.9cm and 1.3cm,
+        paso/.style={draw, rounded corners, align=center, minimum width=3.6cm, minimum height=0.8cm},
+        destaque/.style={draw=black, line width=0.9pt, rounded corners, align=center, minimum width=3.6cm, minimum height=0.8cm, fill=yellow!20},
+        canal/.style={draw, rounded corners, align=center, minimum width=2.8cm, minimum height=0.8cm, fill=gray!10},
+        flecha/.style={-{Latex[length=2mm]}, thick}
+    ]
+        \node[paso] (a1) {Alicia\\elige bit y base};
+        \node[canal, right=of a1] (q) {canal cuántico\\cúbit};
+        \node[paso, right=of q] (b1) {Bob\\elige base y mide};
+
+        \node[destaque, below=of a1] (a2) {Alicia anuncia\\par de estados};
+        \node[canal, right=of a2] (c) {canal clásico\\autenticado};
+        \node[destaque, right=of c] (b2) {Bob anuncia posi-\\ciones coincidentes};
+
+         % bloque simplificado que agrupa lo común con BB84
+         \node[paso, below=2.0cm of c, minimum width=6.4cm] (common) {Cribado y post‑procesado\\(estimación de error, reconciliación y\\amplificación de privacidad)\\ 
+         Clave final compartida \\ \textit{(igual que BB84)}};
+
+         % flechas
+         \draw[flecha] (a1.east) -- (q.west);
+         \draw[flecha] (q.east) -- (b1.west);
+         \draw[flecha] (a1.south) -- (a2.north);
+         \draw[flecha] (b1.south) -- (b2.north);
+         \draw[flecha] (a2.east) -- (c.west);
+         \draw[flecha] (b2.west) -- (c.east);
+         \draw[flecha] (c.south) -- (common.north);
+
+
+    \end{tikzpicture}
+    \caption[Esquema operativo de SARG04 simplificado]{Diagrama de flujo simplificado del protocolo SARG04. Fuente: Elaboración propia}
+    \label{fig:sarg04_flujo}
+\end{figure}
+
+La Figura~\ref{fig:sarg04_flujo} resume esta lógica. Toda la estructura es similar a la Figura~\ref{fig:bb84_flujo} excepto el punto donde Alicia en lugar de anunciar sus bases, ahora anuncia un par de estados, por ejemplo $(|0\rangle, |+\rangle )$, y al mismo tiempo Bob, en lugar de anunciar sus bases, ahora comunica solo las posiciones concluyentes con la información de Alicia. En el diagrama de flujo marcamos en color amarillo los cambios frente al protocolo BB84.
 
 \subsection{Ventajas principales}
 \begin{itemize}
-    \item a
-    \item b
-    \item c
+    \item Mejora la seguridad práctica frente a fuentes de luz atenuadas, reduciendo significativamente la ventaja de una atacante utilizando técnicas de PNS.
+    \item Especialmente en canales con alta perdida o donde no se pueden implementar otras técnicas como ''decoy states''.
+    \item Conserva la misma preparación física de estados que BB84, por lo que es fácil de implementar reutilizando procesos, sistemas y canales existentes.
 \end{itemize}
 
 \subsection{Limitaciones y riesgos}
 \begin{itemize}
-    \item a
-    \item b
-    \item c
+    \item El número de eventos concluyentes es menor que en protocolo BB84, así que hay generar un mayor número de intentos, y por tanto es menos eficiente en el proceso de cribado de bits útiles.
+    \item Sigue siendo vulnerable a otros problemas prácticos como en BB84 (fallos de dectectores, ataques laterales,..) si el modelo de seguridad no es realista.
+
 \end{itemize}
 
 \subsection{Ejemplo práctico}
+
+Para ilustrar el procedimiento, se considera mismo caso reducido de seis rondas que en protocolo BB84.
+
+\begin{table}[h]
+\centering
+\small
+\begin{tabular}{c c c c c c c}
+\hline\hline
+Ronda & Bit de Alicia & Enviado & Anunciado & Base de Bob & Resultado Bob & ¿Concluyente? \\
+\hline
+1 & 0 & $|0\rangle$ & ${|0\rangle,|+\rangle}$ & Rectilínea & $|0\rangle$ & Sí \\
+2 & 1 & $|1\rangle$ & ${|1\rangle,|-\rangle}$ & Rectilínea & $|0\rangle$ & No \\
+3 & 1 & $|+\rangle$ & ${|+\rangle,|1\rangle}$ & Diagonal & $|+\rangle$ & Sí \\
+4 & 0 & $|-\rangle$ & ${|-\rangle,|0\rangle}$ & Diagonal & $|+\rangle$ & No \\
+5 & 1 & $|+\rangle$ & ${|+\rangle,|1\rangle}$ & Rectilínea & $|1\rangle$ & No \\
+6 & 0 & $|0\rangle$ & ${|0\rangle,|+\rangle}$ & Diagonal & $|-\rangle$ & No \\
+\hline
+\end{tabular}
+\caption[Ejemplo de cribado en SARG04]{Ejemplo simplificado de cribado en SARG04: solo se conservan las rondas con resultados concluyentes. Fuente: elaboración propia.}
+\label{tab:sarg04_ejemplo}
+\end{table}
+
+En el caso de la Tabla~\ref{tab:sarg04_ejemplo} Alicia envía estados elegidos al azar entre $|0\rangle,|1\rangle,|+\rangle,|-\rangle$ y, tras la medición de Bob, anuncia para cada ronda un par de estados que contiene el estado realmente enviado. La columna “Resultado Bob” indica el resultado físico de su medida en la base que eligió, y la columna “¿Concluyente?” señala si ese resultado permite a Bob inferir sin ambigüedad (o con la certeza requerida por el protocolo) el bit de Alicia dado el par anunciado: solo las rondas concluyentes se conservan para la clave bruta. Por tanto, mientras en BB84 la decisión de conservar se basa en la coincidencia de bases (aprox. $50\%$ de las rondas) , en SARG04 la decisión se basa en la compatibilidad del resultado de Bob con el par anunciado por Alicia (aprox. $25\%$); esto reduce la fracción de rondas retenidas pero modifica la estadística que un atacante puede explotar y hace evidente la presencia de Eva. 
+\newline
+
+El procedimiento de comprobación de ruido y espionaje es análogo al descrito para BB84, con una diferencia en lo que se revela públicamente: tras conservar las rondas concluyentes, Alicia y Bob pueden comparar una de esas rondas al azar para estimar la tasa de error y distinguir ruido de posible intervención de Eva. Si Eva interceptó y retuvo fotones (ataque PNS), su información útil sobre la clave dependerá ahora no solo de haber acertado la base, sino también de que la ronda resultara concluyente después del anuncio del par—una circunstancia que ella no puede prever al momento de la interceptación. Por tanto, aunque en una ejecución real se usarán miles o millones de rondas para obtener estimaciones estadísticas fiables, la lógica básica es la misma: conservación de rondas concluyentes, revelación aleatoria de una fracción para estimar errores, y abortar si la tasa de discrepancias excede el umbral aceptable.
